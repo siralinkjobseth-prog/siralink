@@ -1,0 +1,34 @@
+# ==========================================
+# 🔥 SUPABASE CONFIGURATION (የዳታቤዝ መረጃዎች)
+# ==========================================
+
+# የሱፐቤዝ ፕሮጀክትዎ ዋና መገኛ ሊንክ
+SUPABASE_URL=https://your-project-id.supabase.co
+
+# የሱፐቤዝ ህዝባዊ ቁልፍ (በፊት ለፊት ኮድ ላይ ጥቅም ላይ የሚውል)
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-anon-key-here
+
+# የሱፐቤዝ የበላይ አድሚን ቁልፍ (🚨 ይህ ፍፁም ለሰው እንዳይታይ! ቦት እና Edge Functions ላይ ብቻ ነው የሚሰራው)
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-service-role-key-here
+
+
+# ==========================================
+# 🤖 TELEGRAM BOT CONFIGURATION (የቦት መረጃዎች)
+# ==========================================
+
+# ከቴሌግራም BotFather ያገኙት የቦት መለያ ቁልፍ
+TELEGRAM_BOT_TOKEN=1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ-your-token
+
+# የቦቱ አድሚን የቴሌግራም መለያ ID (ለሙከራ እና ለአስተዳደር)
+TELEGRAM_ADMIN_ID=987654321
+
+
+# ==========================================
+# ⚡ APPLICATION ENVIRONMENT (የአፑ ሁኔታ)
+# ==========================================
+
+# ልማት ላይ ከሆነ 'development' ምርት ላይ ከሆነ 'production'
+NODE_ENV=development
+
+# የ Mini App ዋና ዌብሳይት ሊንክ (ነገ ላይ ሆስት ሲደረግ የሚቀየር)
+WEBAPP_URL=https://your-mini-app-domain.com
