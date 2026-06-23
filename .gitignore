@@ -1,0 +1,9 @@
+# የሚስጥራዊ ቁልፎች ፋይል እንዳይሰቀል መከልከል
+.env
+.env.local
+.env.production
+
+# የኖድ ፓኬጆች
+node_modules/
+dist/
+.DS_Store
