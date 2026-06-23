@@ -1,72 +1,68 @@
-const { createClient } = require('@supabase/supabase-js');
+import { supabase } from '../../js/config/supabase.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
-// ከ .env ላይ የ Supabase መረጃዎችን እናነባለን
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // 🚨 ተጠቃሚ ለመመዝገብ Service Role Key ይመረጣል
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+export const startCommand = {
+  name: 'start',
+  description: 'SiraLink መተግበሪያን መጀመሪያ ለማስነሳት',
+  
+  /**
+   * የ /start ትዕዛዝ ሲመጣ የሚሰራው ዋና ተግባር
+   * @param {Object} bot - Telegraf ወይም Telegram Bot Client Instance
+   * @param {Object} ctx - የቴሌግራም ኮንቴክስት (Context)
+   */
+  execute: async (ctx) => {
+    const telegramUser = ctx.from;
+    const telegramId = telegramUser.id;
+    const username = telegramUser.username || null;
+    const fullName = `${telegramUser.first_name || ''} ${telegramUser.last_name || ''}`.trim();
 
-/**
- * /start ትዕዛዝ ሲመጣ ተጠቃሚውን መዝግቦ የ Mini App ሊንክ የሚሰጥ ተግባር
- * @param {Object} bot - የቴሌግራም ቦት Instance
- * @param {Object} msg - ከቴሌግራም የመጣው የመልዕክት መረጃ
- */
-async function handleStartCommand(bot, msg) {
-  const chatId = msg.chat.id;
-  const fromUser = msg.from; // የቴሌግራም ተጠቃሚ መረጃ (id, first_name, username)
+    try {
+      // 1. ተጠቃሚው ቀደም ብሎ በዳታቤዝ ውስጥ መኖሩን መፈተሽ
+      let { data: user, error: fetchError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('telegram_id', telegramId)
+        .maybeSingle();
 
-  // በቴሌግራም የሚመጡ ስሞች ባዶ እንዳይሆኑ ማረጋገጥ
-  const firstName = fromUser.first_name || '';
-  const lastName = fromUser.last_name || '';
-  const fullName = `${firstName} ${lastName}`.trim() || 'የ SiraLink ተጠቃሚ';
+      if (fetchError) throw fetchError;
 
-  try {
-    // 1. 📢 ተጠቃሚው በዳታቤዝ ውስጥ አስቀድሞ መኖሩን ወይም አለመኖሩን ማረጋገጥ (Upsert)
-    // ተጠቃሚው ከዚህ በፊት ካለ ዳታው ይዘመናል፣ ከሌለ አዲስ Row ይፈጠራል።
-    const { error } = await supabase
-      .from('users')
-      .upsert({
-        telegram_id: fromUser.id,
-        username: fromUser.username || null,
-        first_name: firstName || null,
-        last_name: lastName || null,
-        full_name: fullName,
-        is_active: true,
-        last_seen: new Date().toISOString()
-      }, { onConflict: 'telegram_id' }); // በ telegram_id ላይ ግጭት እንዳይፈጠር
-
-    if (error) {
-      console.error('[Database Error] ተጠቃሚውን መመዝገብ አልተቻለም:', error.message);
-    } else {
-      console.log(`[Database Success] ተጠቃሚው ${fullName} (ID: ${fromUser.id}) በስኬት ተመዝግቧል/ዘምኗል።`);
-    }
-
-    // 2. 📱 ለተጠቃሚው የሚላክ የእንኳን ደህና መጣህ መልዕክት
-    const welcomeMessage = `👋 ጤና ይስጥልኝ ${firstName}!\n\n` +
-                           ` እንኳን ወደ **SiraLink** የቅጥር ስነ-ምህዳር በሰላም መጡ።\n\n` +
-                           `SiraLink በቴሌግራምዎ ላይ ብቻ በመሆን አዳዲስ የስራ ማስታወቂያዎችን በፍጥነት የሚፈልጉበት፣ ` +
-                           `ፕሮፋይልዎን በመሙላት በሲቪዎ የሚመጥኑ ስራዎችን የሚያገኙበት እና ቀጥታ የሚያመለክቱበት መድረክ ነው።\n\n` +
-                           `👇 አሁኑኑ መተግበሪያውን ለመክፈት ከታች ያለውን **🚀 አፕሊኬሽኑን ክፈት** የሚለውን ቁልፍ ይጫኑ!`;
-
-    // 3. የ Mini App ቁልፍ (Inline Keyboard with WebApp URL) ማዘጋጀት
-    await bot.sendMessage(chatId, welcomeMessage, {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { 
-              text: '🚀 SiraLink አፕሊኬሽኑን ክፈት', 
-              // 🚨 ማሳሰቢያ፦ የራስህን Bot WebApp URL እዚህ ጋር ቀይረው
-              web_app: { url: 'https://YOUR_MINI_APP_DOMAIN.com/index.html' } 
+      // 2. ከዚህ ቀደም ያልተመዘገበ አዲስ ተጠቃሚ ከሆነ መመዝገብ
+      if (!user) {
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert([
+            {
+              telegram_id: telegramId,
+              username: username,
+              full_name: fullName,
+              profile_completion: 20 // መነሻ 20% ይሰጠዋል (ቴሌግራም አካውንት ስላለው)
             }
-          ]
-        ]
+          ])
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        user = newUser;
+        console.log(`[Bot Engine] 🎉 አዲስ ተጠቃሚ በስኬት ተመዝግቧል: ${fullName} (ID: ${telegramId})`);
       }
-    });
 
-  } catch (globalError) {
-    console.error('[Bot Error] በ /start ወቅት ስህተት ተፈጥሯል:', globalError.message);
-    bot.sendMessage(chatId, "⚠️ ይቅርታ፣ ሲስተሙን ለማስነሳት ትንሽ ችግር አጋጥሟል። እባክዎ እንደገና ይሞክሩ።");
+      // 3. የ Mini App መክፈቻ ቁልፍ ማዘጋጀት (Inline Keyboard Button)
+      const webAppUrl = process.env.WEBAPP_URL || 'https://your-mini-app-domain.com';
+
+      await ctx.reply(`👋 ሰላም ${fullName}! ወደ SiraLink እንኳን በደህና መጡ።\n\n💼 ይህ በ AI የሚሰራ የስራ ማዛመጃ እና የቴሌግራም Mini App ፕላትፎርም ነው።\n\n👇 ከታች ያለውን "አፑን ክፈት" የሚለውን ቁልፍ በመንካት የቅርብ ጊዜ ስራዎችን ማየት እና ፕሮፋይልዎን ማጠናቀቅ ይችላሉ።`, {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '📱 SiraLink አፑን ክፈት', web_app: { url: webAppUrl } }
+            ]
+          ]
+        }
+      });
+
+    } catch (err) {
+      console.error('[Bot Start Command Error]:', err.message);
+      await ctx.reply('⚠️ ይቅርታ፣ ቦቱን ማነሳሳት አልተቻለም። እባክዎ ጥቂት ቆይተው እንደገና ይሞክሩ።');
+    }
   }
-}
-
-module.exports = { handleStartCommand };
+};
