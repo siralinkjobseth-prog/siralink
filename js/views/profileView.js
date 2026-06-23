@@ -1,4 +1,5 @@
-import { supabase } from '../config/supabase.js';
+import { usersService } from '../services/users-service.js';
+import { storageService } from '../services/storage-service.js';
 
 export const profileView = {
   /**
@@ -10,7 +11,12 @@ export const profileView = {
     const user = cachedUser ? JSON.parse(cachedUser) : null;
 
     if (!user) {
-      return `<div class="p-4 text-center text-red-500">⚠️ እባክዎ መጀመሪያ ቦቱን በመጠቀም ይመዝገቡ!</div>`;
+      return `
+        <div class="p-6 text-center text-red-500 bg-red-50 rounded-2xl m-4 border border-red-100">
+          <p class="font-bold">⚠️ ፈቃድ አልተሰጠውም</p>
+          <p class="text-xs mt-1">እባክዎ መተግበሪያውን ለመጠቀም መጀመሪያ የቴሌግራም ቦቱን ይክፈቱ።</p>
+        </div>
+      `;
     }
 
     return `
@@ -21,9 +27,9 @@ export const profileView = {
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
           
           <div>
-            <label class="text-xs font-bold text-gray-500 block mb-1">ሙሉ ስም</label>
+            <label class="text-xs font-bold text-gray-500 block mb-1"> can ሙሉ ስም *</label>
             <input type="text" id="prof-full-name" value="${user.full_name || ''}" 
-              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500">
+              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 font-medium">
           </div>
 
           <div>
@@ -34,7 +40,7 @@ export const profileView = {
 
           <div>
             <label class="text-xs font-bold text-gray-500 block mb-1">የስራ / የትምህርት ዘርፍ</label>
-            <select id="prof-department" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none">
+            <select id="prof-department" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none font-medium">
               <option value="" ${!user.department ? 'selected' : ''}>ይምረጡ...</option>
               <option value="IT" ${user.department === 'IT' ? 'selected' : ''}>IT / ቴክኖሎጂ</option>
               <option value="Accounting" ${user.department === 'Accounting' ? 'selected' : ''}>አካውንቲንግ / ፋይናንስ</option>
@@ -45,7 +51,7 @@ export const profileView = {
 
           <div>
             <label class="text-xs font-bold text-gray-500 block mb-1">የትምህርት ደረጃ</label>
-            <select id="prof-education" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none">
+            <select id="prof-education" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none font-medium">
               <option value="" ${!user.education_level ? 'selected' : ''}>ይምረጡ...</option>
               <option value="Degree" ${user.education_level === 'Degree' ? 'selected' : ''}>በመጀመሪያ ዲግሪ (BSc/BA)</option>
               <option value="Masters" ${user.education_level === 'Masters' ? 'selected' : ''}>ማስተርስ (MSc/MA)</option>
@@ -56,23 +62,28 @@ export const profileView = {
           <div>
             <label class="text-xs font-bold text-gray-500 block mb-1">የስራ ልምድ (በዓመት)</label>
             <input type="number" id="prof-experience" value="${user.experience_years || 0}" min="0"
-              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500">
+              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 font-medium">
           </div>
 
-          <div class="border-2 border-dashed border-gray-200 p-4 rounded-xl text-center bg-gray-50" id="cv-upload-zone">
+          <div class="border-2 border-dashed border-gray-200 p-4 rounded-xl text-center bg-gray-50 transition-all" id="cv-upload-zone">
             <label class="cursor-pointer block">
               <span class="text-2xl block mb-1">📄</span>
-              <span class="text-xs font-bold text-blue-600 block mb-0.5">የሲቪ ፋይልዎን ይጫኑ</span>
+              <span class="text-xs font-bold text-blue-600 block mb-0.5" id="cv-upload-label">የሲቪ ፋይልዎን ይጫኑ</span>
               <span class="text-[10px] text-gray-400 block">PDF ብቻ (ከ 5MB ያልበለጠ)</span>
               <input type="file" id="cv-file-input" accept=".pdf" class="hidden">
             </label>
-            <div id="cv-file-status" class="text-xs font-semibold text-green-600 mt-2 hidden">✓ ፋይል ተመርጧል</div>
+            ${user.cv_url ? `
+              <div class="mt-2 text-[11px] bg-blue-50 text-blue-700 py-1.5 px-3 rounded-lg inline-flex items-center gap-1 font-semibold">
+                📎 <a href="${user.cv_url}" target="_blank" class="underline">የአሁኑ ሲቪዎ (ያዩት)</a>
+              </div>
+            ` : ''}
+            <div id="cv-file-status" class="text-xs font-bold text-green-600 mt-2 hidden"></div>
           </div>
 
         </div>
 
         <div class="mt-6">
-          <button id="save-profile-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm shadow-md transition-colors">
+          <button id="save-profile-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm shadow-md transition-all active:scale-[0.99]">
             💾 መረጃዬን አስቀምጥ
           </button>
         </div>
@@ -81,102 +92,81 @@ export const profileView = {
   },
 
   /**
-   * የፋይል አፕሎድ እና የዳታ ሴቭ ክስተቶችን (Events) መቆጣጠሪያ
+   * ሰርቪሶቹን በመጥራት ዳታቤዝ የማዘመን ሂደት
    */
   afterRender: async () => {
     const saveBtn = document.getElementById('save-profile-btn');
     const fileInput = document.getElementById('cv-file-input');
     const fileStatus = document.getElementById('cv-file-status');
+    const uploadZone = document.getElementById('cv-upload-zone');
     
     let selectedFile = null;
 
-    // 1. ፋይል ሲመረጥ በስክሪን ላይ ማሳያ
+    // 1. ተጠቃሚው ፋይል ሲመርጥ በስክሪን ላይ ማሳያ ውበት መስጠት
     fileInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
         selectedFile = e.target.files[0];
-        fileStatus.innerText = `✓ የተመረጠ ፋይል፡ ${selectedFile.name}`;
+        fileStatus.innerText = `✓ የተመረጠ ፋይል፦ ${selectedFile.name.length > 25 ? selectedFile.name.substring(0, 22) + '...' : selectedFile.name}`;
         fileStatus.classList.remove('hidden');
+        uploadZone.classList.add('border-blue-300', 'bg-blue-50/30');
       }
     });
 
-    // 2. ሴቭ ቁልፍ ሲጫን ዳታቤዝ የማዘመን ሂደት
+    // 2. ሴቭ ቁልፍ ሲጫን የሚሰራው ዋና ሂደት
     saveBtn.addEventListener('click', async () => {
+      const cachedUser = JSON.parse(localStorage.getItem('siralink_user'));
+      const fullName = document.getElementById('prof-full-name').value.trim();
+      const phone = document.getElementById('prof-phone').value.trim();
+      const department = document.getElementById('prof-department').value;
+      const education = document.getElementById('prof-education').value;
+      const experience = document.getElementById('prof-experience').value;
+
+      if (!fullName) {
+        alert("⚠️ እባክዎ ሙሉ ስምዎን ያስገቡ!");
+        return;
+      }
+
       saveBtn.disabled = true;
-      saveBtn.innerText = 'እየተቀመጠ ነው...';
+      saveBtn.innerText = 'መረጃዎ እየተቀመጠ ነው...';
 
       try {
-        const cachedUser = JSON.parse(localStorage.getItem('siralink_user'));
-        
-        const fullName = document.getElementById('prof-full-name').value.trim();
-        const phone = document.getElementById('prof-phone').value.trim();
-        const department = document.getElementById('prof-department').value;
-        const education = document.getElementById('prof-education').value;
-        const experience = parseInt(document.getElementById('prof-experience').value) || 0;
-
-        if (!fullName) {
-          alert("እባክዎ ሙሉ ስምዎን ያስገቡ!");
-          saveBtn.disabled = false;
-          saveBtn.innerText = '💾 መረጃዬን አስቀምጥ';
-          return;
-        }
-
         let cvUrl = cachedUser.cv_url || null;
 
-        // ሀ. 📂 ፋይል ተመርጦ ከሆነ መጀመሪያ ወደ Supabase Storage መጫን (Upload)
+        // ሀ. 📂 ፋይል ተመርጦ ከሆነ በአዲሱ Storage ሰርቪስ በኩል መጫን
         if (selectedFile) {
-          const fileExt = selectedFile.name.split('.').pop();
-          const fileName = `${cachedUser.id}_cv.${fileExt}`;
-          const filePath = `cvs/${fileName}`;
-
-          // በ Supabase Storage 'siralink_bucket' ውስጥ ፋይሉን ማስቀመጥ
-          const { error: uploadError } = await supabase.storage
-            .from('siralink_bucket')
-            .upload(filePath, selectedFile, { upsert: true });
-
-          if (uploadError) throw uploadError;
-
-          // የፋይሉን Public ሊንክ ማውጣት
-          const { data: publicUrlData } = supabase.storage
-            .from('siralink_bucket')
-            .getPublicUrl(filePath);
+          saveBtn.innerText = 'ሲቪ ፋይልዎ እየተጫነ ነው...';
+          const uploadResult = await storageService.uploadCV(cachedUser.id, selectedFile);
           
-          cvUrl = publicUrlData.publicUrl;
+          if (!uploadResult.success) {
+            throw new Error(uploadResult.error);
+          }
+          cvUrl = uploadResult.cvUrl;
         }
 
-        // ለ. 🧮 የፕሮፋይል ማጠናቀቂያ ፐርሰንት ስሌት (Profile Completion Logic)
-        let score = 20; // ስምና ቴሌግራም ID ስላለው መነሻ 20%
-        if (phone) score += 20;
-        if (department) score += 20;
-        if (education) score += 20;
-        if (cvUrl) score += 20; // ሁሉም ከተሟላ 100% ይሆናል
+        // ለ. 📝 የተጠቃሚውን መረጃ በአዲሱ Users ሰrቪስ በኩል ዳታቤዝ ላይ ማዘመን
+        saveBtn.innerText = 'ዳታቤዝ እየዘመነ ነው...';
+        const updateResult = await usersService.updateProfile(cachedUser.id, {
+          full_name: fullName,
+          phone: phone,
+          department: department,
+          education_level: education,
+          experience_years: experience,
+          cv_url: cvUrl
+        });
 
-        // ሐ. መረጃዎቹን ወደ `users` ሰንጠረዥ ማዘመን (Update)
-        const { data: updatedUser, error: updateError } = await supabase
-          .from('users')
-          .update({
-            full_name: fullName,
-            phone: phone,
-            department: department,
-            education_level: education,
-            experience_years: experience,
-            profile_completion: score,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', cachedUser.id)
-          .select()
-          .single();
+        if (!updateResult.success) {
+          throw new Error(updateResult.error);
+        }
 
-        if (updateError) throw updateError;
-
-        // መሸጎጫውን (LocalStorage Cache) በአዲሱ ዳታ መቀየር
-        localStorage.setItem('siralink_user', JSON.stringify(updatedUser));
+        // ሐ. አዲሱን ዳታ በ LocalStorage መሸጎጫ (Cache) ላይ መተካት
+        localStorage.setItem('siralink_user', JSON.stringify(updateResult.data));
 
         alert("🎉 ፕሮፋይልዎ በስኬት ዘምኗል!");
         window.location.hash = '#home'; // ወደ ዳሽቦርድ መመለስ
 
       } catch (err) {
-        console.error("ፕሮፋይል ማዘመን አልተቻለም:", err.message);
-        alert("⚠️ መረጃውን ማስቀመጥ አልተቻለም። እባክዎ እንደገና ይሞክሩ።");
+        console.error('[Profile View Error]:', err.message);
+        alert(`⚠️ ስህተት፡ ${err.message}`);
       } finally {
         saveBtn.disabled = false;
         saveBtn.innerText = '💾 መረጃዬን አስቀምጥ';
