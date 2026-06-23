@@ -3,11 +3,10 @@
 # ==========================================
 
 # የሱፐቤዝ ፕሮጀክትዎ ዋና መገኛ ሊንክ
-SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_URL=https://swjdzyfcancbceeowuuj.supabase.co
 
 # የሱፐቤዝ ህዝባዊ ቁልፍ (በፊት ለፊት ኮድ ላይ ጥቅም ላይ የሚውል)
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-anon-key-here
-
+SUPABASE_ANON_KEY=sb_publishable_h-rhUb7sfQF-d6dhTKC-OQ_hJwoj50k
 # የሱፐቤዝ የበላይ አድሚን ቁልፍ (🚨 ይህ ፍፁም ለሰው እንዳይታይ! ቦት እና Edge Functions ላይ ብቻ ነው የሚሰራው)
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-service-role-key-here
 
@@ -17,8 +16,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-service-role
 # ==========================================
 
 # ከቴሌግራም BotFather ያገኙት የቦት መለያ ቁልፍ
-TELEGRAM_BOT_TOKEN=1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ-your-token
-
+TELEGRAM_BOT_TOKEN=8506911456:AAHQUUY7F1tTrkc7UlqJ_J84yIRmeriv6_4
 # የቦቱ አድሚን የቴሌግራም መለያ ID (ለሙከራ እና ለአስተዳደር)
 TELEGRAM_ADMIN_ID=987654321
 
